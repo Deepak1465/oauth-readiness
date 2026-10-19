@@ -1,5 +1,7 @@
 # OAuth Readiness
 
+**Live:** https://oauth-readiness.vercel.app
+
 Before an AI agent can act on someone's Gmail, GitHub or Notion, the developer usually needs their own OAuth app registered, and sometimes approved, by that provider. The code is the easy part. The hard part is the provider's process: is this an hour of setup, or six weeks of review plus a paid security audit?
 
 This app answers that question first. Look up an app and you get a shareable guide with:
