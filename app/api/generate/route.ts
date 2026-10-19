@@ -55,7 +55,7 @@ function stream(run: (emit: (e: AgentEvent) => void) => Promise<void>): Response
 
 function friendly(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
-  if (/429|quota|RESOURCE_EXHAUSTED/i.test(msg)) return "The free Gemini quota is used up for now. Try again in a minute, or open a guide from the library.";
-  if (/API key|PERMISSION_DENIED|401|403/i.test(msg)) return "The Gemini API key is missing or invalid on the server.";
+  if (/\b429\b|quota|RESOURCE_EXHAUSTED/i.test(msg)) return "The free Gemini quota is used up for now. Try again in a minute, or open a guide from the library.";
+  if (/API key|PERMISSION_DENIED|\b40[13]\b/i.test(msg)) return "The Gemini API key is missing or invalid on the server.";
   return msg.slice(0, 300);
 }

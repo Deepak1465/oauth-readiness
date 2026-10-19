@@ -6,7 +6,7 @@ import { LlmGuide, toGuide } from "../mappers/llm-to-guide";
 import { excerpts, relevance, relevantLinks } from "../mappers/page-to-evidence";
 import { searchAll } from "../plugins/search";
 import { pool } from "../shared/pool";
-import { appTerm, cleanRoot, hostOf, rootDomain, seedUrl, slugify } from "../shared/url";
+import { appTerm, cleanRoot, hostOf, isPlaceholderHost, rootDomain, seedUrl, slugify } from "../shared/url";
 import { DISCOVER_PROMPT, Discovery, WRITE_PROMPT } from "./prompts";
 
 // Live guide generation on Gemini's free tier. Two model calls; everything else is code:
@@ -27,9 +27,14 @@ const MAX_SOURCES = 10;
 
 type Page = { title: string; url: string; html: string; text: string; score: number; official: boolean };
 
-async function load(url: string, title: string, officialRoots: Set<string>, stats: { thin: number }): Promise<Page | null> {
+type Stats = { thin: number; failed: Set<string> };
+
+async function load(url: string, title: string, officialRoots: Set<string>, stats: Stats): Promise<Page | null> {
   const page = await fetchReadable(url, 10000);
-  if (!page) return null;
+  if (!page) {
+    stats.failed.add(url);
+    return null;
+  }
   const text = excerpts(page.text, 5500);
   if (text.length < 200) {
     stats.thin++; // loaded, but nothing about OAuth, scopes or review on it
@@ -51,8 +56,11 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
   emit({ type: "step", id: "discover", label: L1 });
   const d = await generateStructured(DISCOVER_PROMPT(term), Discovery, busy("discover", L1));
   const seed = seedUrl(query);
+  // A typed name the model doesn't know is usually a typo; guessing a different app would be worse than asking.
+  // A URL skips this: the site itself is the evidence, even for a provider the model has never heard of.
+  if (!seed && !d.recognized) throw new Error(`Couldn't find an app called "${term}". Check the spelling, or enter the app's developer docs URL.`);
   const officialRoots = new Set(
-    [...d.officialDomains.map(cleanRoot), cleanRoot(hostOf(d.website.startsWith("http") ? d.website : `https://${d.website}`)), ...(seed ? [rootDomain(hostOf(seed))] : [])].filter((r) => r.includes(".")),
+    [...d.officialDomains.map(cleanRoot), cleanRoot(hostOf(d.website.startsWith("http") ? d.website : `https://${d.website}`)), ...(seed ? [rootDomain(hostOf(seed))] : [])].filter((r) => r.includes(".") && !isPlaceholderHost(r)),
   );
   emit({ type: "step", id: "discover", label: L1, detail: `${d.name}, ${d.docUrls.length} candidate doc pages on ${[...officialRoots].join(", ")}` });
 
@@ -67,10 +75,12 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
   emit({ type: "step", id: "fetch", label: L3 });
   // The URL the user typed comes first: it's the one source we know is right.
   const candidates = [...(seed ? [{ url: seed, title: "" }] : []), ...d.docUrls.slice(0, 10).map((url) => ({ url, title: "" })), ...found.hits.slice(0, 12)]
-    .filter((c) => /^https?:\/\//.test(c.url))
+    .filter((c) => /^https?:\/\//.test(c.url) && !isPlaceholderHost(hostOf(c.url)))
     .filter((c, i, all) => all.findIndex((x) => x.url === c.url) === i);
-  const stats = { thin: 0 };
+  const stats: Stats = { thin: 0, failed: new Set() };
   const first = (await pool(candidates, 6, (c) => load(c.url, c.title, officialRoots, stats))).filter((p): p is Page => !!p);
+  // The user named this site; if it doesn't load, guessed pages elsewhere would describe something else.
+  if (seed && stats.failed.has(seed)) throw new Error(`Couldn't load ${seed}. Check that the address is right and publicly reachable.`);
   const seen = new Set([...candidates.map((c) => c.url), ...first.map((p) => p.url)]);
   const nextHops = first
     .filter((p) => p.official)
@@ -103,6 +113,8 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
   const L5 = "Checking every quote against its page";
   emit({ type: "step", id: "verify", label: L5 });
   if (token.length >= 3) for (const p of fetched) if (rootDomain(hostOf(p.url)).includes(token)) officialRoots.add(rootDomain(hostOf(p.url)));
+  // No steps means the pages didn't describe an OAuth app process at all.
+  if (!g.steps.length) throw new Error(`The pages found for "${d.name || term}" don't describe how to set up or get approval for an OAuth app, so there isn't enough to write a guide. Try the app's developer docs URL.`);
   const guide = toGuide(g, {
     slug: slugify(term), // from the request, so a repeat request for the same app hits the cache
     fallbackName: term,

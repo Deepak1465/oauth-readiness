@@ -3,6 +3,7 @@ import { z } from "zod";
 // The two prompts the agent sends, and the discovery schema. The guide schema lives in mappers/llm-to-guide.ts.
 
 export const Discovery = z.object({
+  recognized: z.boolean().describe("true only if you know a real product by exactly this name or website; false for unknown or made-up names"),
   name: z.string().describe("the provider's official product name"),
   website: z.string(),
   officialDomains: z.array(z.string()).describe("root domains the provider owns, e.g. example.com, examplecdn.com"),
@@ -11,7 +12,7 @@ export const Discovery = z.object({
     .describe("up to 10 full URLs of the provider's official pages on: registering an OAuth app, OAuth scopes/permissions, app review or verification, going to production or publishing, rate limits, developer terms or policies"),
 });
 
-export const DISCOVER_PROMPT = (q: string) => `A developer wants to register their own OAuth app with "${q}" so their users can connect ${q} accounts to an AI agent product. Identify the provider and list the official documentation URLs most likely to describe: creating an OAuth app or client credentials; OAuth scopes and permissions; app review, verification or approval for public use; moving from development/test mode to production; partner programs or access tiers; rate limits; developer policies. Give real, specific URLs you are confident exist on the provider's own domains. Do not invent paths.`;
+export const DISCOVER_PROMPT = (q: string) => `A developer wants to register their own OAuth app with "${q}" so their users can connect ${q} accounts to an AI agent product. Identify the provider and list the official documentation URLs most likely to describe: creating an OAuth app or client credentials; OAuth scopes and permissions; app review, verification or approval for public use; moving from development/test mode to production; partner programs or access tiers; rate limits; developer policies. Give real, specific URLs you are confident exist on the provider's own domains. Do not invent paths. If you don't know a product by this name, set recognized to false and never substitute a different product.`;
 
 export const WRITE_PROMPT = (q: string, sources: { title: string; url: string; text: string }[]) => `You write OAuth readiness guides. A developer building an AI agent product wants their external users to connect their "${q}" accounts through the developer's OWN OAuth app. Using ONLY the sources below, explain how hard it is to get that OAuth app ready and approved, how long it takes, what could block it, and which steps an agent can do. Today is ${new Date().toISOString().slice(0, 10)}.
 

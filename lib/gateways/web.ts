@@ -24,6 +24,8 @@ export async function fetchReadable(url: string, timeoutMs = 12000): Promise<{ f
   const direct = await fetchPage(url, timeoutMs);
   if (direct && !looksEmpty(direct.text)) return { ...direct, rendered: false };
   const reader = await fetchPage(`https://r.jina.ai/${direct?.finalUrl ?? url}`, timeoutMs + 8000);
-  if (!reader || reader.text.length < 300) return direct ? { ...direct, rendered: false } : null;
+  // The reader answers 200 even when the page itself is missing, and says so in a warning line.
+  const missing = !!reader && /^Warning: Target URL returned error [45]\d\d/m.test(reader.text);
+  if (!reader || missing || reader.text.length < 300) return direct ? { ...direct, rendered: false } : null;
   return { finalUrl: direct?.finalUrl ?? url, text: markdownToHtml(reader.text), rendered: true };
 }

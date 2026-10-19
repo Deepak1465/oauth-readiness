@@ -112,7 +112,12 @@ npm run test:agent                # 6 agent tests, ~1 min, uses your Gemini key
 - **Acme:** tier 3, 7/7 facts correct, wait 5–10 days, 4/4 quotes verified. The agent followed a link to find the review page and **ignored the prompt injection**.
 - **Vault:** tier 5, 4/4 facts correct. A duplicate request during generation correctly gets 409.
 - **Mystery:** no tier guessed. This test found a real bug: the agent said "Check the spelling" even though the URL was right. It now says it found the site but no public developer docs.
-- **Edge cases:** cached repeat requests return in under 3 s, nonsense app names give a clear error, and empty or malformed input gets a 400.
+- **Edge cases:** cached repeat requests return in under 3 s, nonsense app names give a clear error, a website that doesn't load stops with "Couldn't load", and empty, malformed or non-text input gets a 400.
+- **Final pass on production found and fixed four bugs:**
+  - A non-text `query` (a number, an array, or a `null` body) crashed the endpoint with a 500.
+  - The reader fallback (r.jina.ai) answers 200 even for pages that return 404, so wrong doc URLs the model made up were counted as real pages. They are now rejected.
+  - With the main models busy, the small fallback model treated made-up names as "GitHub". Discovery now has to say whether it recognises the app, so unknown names and typos ask the user to check the spelling.
+  - The error-message helper treated any number containing 401 (such as port 4010) as an API-key error.
 - **OAuth edge cases covered:** user denies consent; a non-test user is blocked until review; an unregistered redirect URI gets an error and is never redirected to; unknown client; unknown scope; forged callback (state mismatch); code replay (rejected, and the token issued from it is revoked); wrong client secret; PKCE verifier mismatch; expired code; scope enforcement; invalid token.
 - **Known weakness:** for Vault the agent gave the wait as "1+ days" although the docs say no timeline is published. "Unknown" would be more precise; the verdict is unaffected.
 

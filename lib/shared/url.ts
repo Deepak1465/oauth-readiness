@@ -20,6 +20,11 @@ export function cleanRoot(d: string): string {
   return rootDomain(d.toLowerCase().trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, ""));
 }
 
+// Reserved example domains (RFC 2606) the model uses as placeholders when it doesn't know a provider.
+export function isPlaceholderHost(host: string): boolean {
+  return /(^|\.)example\.(com|org|net)$|\.(example|test|invalid)$|^localhost$/.test(host);
+}
+
 export function slugify(s: string): string {
   return s.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\.[a-z.]+(\/.*)?$/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 }

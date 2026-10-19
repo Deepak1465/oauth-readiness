@@ -117,8 +117,15 @@ test.describe("Guide agent against fake providers", () => {
       expect(v.rated, "rated a provider that doesn't exist").toBe(false);
     } else {
       expect(r.last.type).toBe("error");
-      expect(r.last.message.length).toBeGreaterThan(10);
+      expect(r.last.message).toContain("Couldn't find an app called");
     }
+  });
+
+  test("website that doesn't load: says so instead of researching guessed pages", async ({ request }) => {
+    const r = await generate(request, "http://ghost.localtest.me:4010/developers");
+    expect(r.last.type).toBe("error");
+    expect(r.last.message).toContain("Couldn't load http://ghost.localtest.me:4010/developers");
+    expect(r.events.some((e) => e.id === "write"), "should stop before writing a guide").toBe(false);
   });
 
   test("input validation and missing pages", async ({ page, request }) => {
