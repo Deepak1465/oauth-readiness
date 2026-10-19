@@ -4,11 +4,13 @@ import { Guide } from "./guide";
 
 // Library guides live in the repo (data/guides). Live guides need somewhere durable so their links can be shared:
 // Upstash Redis (free tier, REST) when configured, otherwise a local folder for development.
+// Vercel's Upstash integration injects either UPSTASH_REDIS_REST_* or KV_REST_API_* depending on version.
 
 const LIBRARY_DIR = join(process.cwd(), "data", "guides");
-const LOCAL_DIR = join(process.cwd(), "data", "generated");
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Serverless filesystems are read-only except /tmp, which doesn't survive between instances: fine as a fallback only.
+const LOCAL_DIR = process.env.VERCEL ? join("/tmp", "generated") : join(process.cwd(), "data", "generated");
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
 function parse(raw: string): Guide | null {
   const r = Guide.safeParse(JSON.parse(raw));
