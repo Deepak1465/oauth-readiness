@@ -26,7 +26,7 @@ npm run dev                     # http://localhost:3000
 Other commands:
 
 ```bash
-npm test                                   # unit tests: tier rule, quote matcher
+npm test                                   # unit tests: tier rule, quote matcher, URL helpers, page fetching, rate limiter
 npm run validate:guides                    # schema + citations + live quote check for data/guides/*.json
 npm run generate -- "Spotify"              # run the live agent from the terminal, printing each step
 ```
@@ -48,7 +48,7 @@ Optional environment variables (see `.env.example`):
 
 All five pass `npm run validate:guides`. 122 of 122 quotes were found word for word on their source pages (checked 2026-10-19/20).
 
-Live-generated examples from testing: Spotify (tier 5, gated: extended access is only for organisations), Xero (tier 2: uncertified apps can connect to 5 organisations), Dropbox (tier 3), Shopify ("not enough evidence to rate").
+Live-generated examples from testing: Spotify (tier 5, gated: extended access is only for organisations), Xero (tier 2: uncertified apps can connect to 5 organisations), Dropbox (tier 3), Shopify ("not enough evidence to rate"). Live results can change between runs: a later Xero run came out tier 4 with low confidence, because the fees fact was read differently. That variance is why every live guide shows its confidence and evidence.
 
 ## Key decisions
 
@@ -104,10 +104,10 @@ Acme also runs a **real OAuth 2.0 server** (developer console, consent screen, a
 ```bash
 npx playwright install chromium   # once
 npm run test:oauth                # 12 OAuth flow tests, ~20 s, no AI calls
-npm run test:agent                # 6 agent tests, ~1 min, uses your Gemini key
+npm run test:agent                # 7 agent tests, ~1 min, uses your Gemini key
 ```
 
-**Results (2026-10-20, all 18 pass from a clean start):**
+**Results (2026-10-20, all 19 pass from a clean start):**
 
 - **Acme:** tier 3, 7/7 facts correct, wait 5–10 days, 4/4 quotes verified. The agent followed a link to find the review page and **ignored the prompt injection**.
 - **Vault:** tier 5, 4/4 facts correct. A duplicate request during generation correctly gets 409.
