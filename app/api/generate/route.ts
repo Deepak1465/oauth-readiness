@@ -12,8 +12,8 @@ const inFlight = new Set<string>();
 
 // Streams newline-delimited JSON events so the page can show the agent's progress as it happens.
 export async function POST(req: Request) {
-  const { query } = (await req.json().catch(() => ({}))) as { query?: string };
-  const q = (query ?? "").trim().slice(0, 100);
+  const body = (await req.json().catch(() => null)) as { query?: unknown } | null;
+  const q = typeof body?.query === "string" ? body.query.trim().slice(0, 100) : "";
   if (q.length < 2) return Response.json({ error: "Enter an app name or website." }, { status: 400 });
 
   const key = slugFor(q);

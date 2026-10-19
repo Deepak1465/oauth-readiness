@@ -9,6 +9,7 @@ export { libraryGuides };
 const storage = storagePlugin();
 
 export async function getGuide(slug: string): Promise<Guide | null> {
+  if (!/^[a-z0-9-]{1,40}$/.test(slug)) return null; // slugs come from URLs; never let one become a file path
   return libraryGuides().find((g) => g.slug === slug) ?? (await storage.get(slug));
 }
 

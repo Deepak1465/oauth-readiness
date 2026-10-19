@@ -126,6 +126,10 @@ test.describe("Guide agent against fake providers", () => {
     expect(empty.status()).toBe(400);
     const junk = await request.post(`${APP}/api/generate`, { data: "not json", headers: { "content-type": "application/json" } });
     expect(junk.status()).toBe(400);
+    for (const data of [{ query: 123 }, { query: ["github"] }, null]) {
+      const bad = await request.post(`${APP}/api/generate`, { data: JSON.stringify(data), headers: { "content-type": "application/json" } });
+      expect(bad.status(), `body ${JSON.stringify(data)}`).toBe(400);
+    }
 
     await page.goto(APP);
     await page.getByRole("button", { name: "Generate guide" }).click();
@@ -133,5 +137,6 @@ test.describe("Guide agent against fake providers", () => {
 
     const missing = await page.goto(`${APP}/guide/does-not-exist`);
     expect(missing?.status()).toBe(404);
+    expect((await page.goto(`${APP}/guide/..%2F..%2Fpackage`))?.status()).toBe(404);
   });
 });
