@@ -3,7 +3,7 @@ import { RateLimiter } from "./ratelimit";
 
 describe("RateLimiter", () => {
   it("allows up to the limit, then blocks, per key", () => {
-    let t = 0;
+    const t = 0;
     const rl = new RateLimiter(2, 1000, () => t);
     expect([rl.allow("a"), rl.allow("a"), rl.allow("a")]).toEqual([true, true, false]);
     expect(rl.allow("b")).toBe(true);
