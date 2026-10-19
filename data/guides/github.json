@@ -1,0 +1,676 @@
+{
+  "slug": "github",
+  "name": "GitHub",
+  "website": "https://github.com",
+  "devPortalUrl": "https://github.com/settings/apps",
+  "generatedAt": "2026-10-19T00:00:00Z",
+  "method": "library",
+  "composio": {
+    "managed": true,
+    "toolkits": [
+      "github"
+    ]
+  },
+  "summary": "GitHub has no app review: you register a GitHub App (recommended) or an OAuth App in Developer settings, set it to public, and any GitHub user can connect it within minutes. The real friction is on the user's side, because organizations decide whether your app may touch their repositories (an org owner must install a GitHub App, or approve an OAuth App when access restrictions are on, which is the default for new orgs).",
+  "scenario": "A public GitHub App (\"Any account\" installation, user authorization enabled) that any external GitHub user can install and authorize so an AI agent can read and act on their repositories: repository permissions Contents read/write, Issues read/write, Pull requests read/write, Metadata read, plus account permission Email addresses read. The OAuth App equivalent would request the repo, read:org and user:email scopes.",
+  "facts": {
+    "selfServeCredentials": {
+      "value": true,
+      "note": "Both GitHub Apps and OAuth Apps are registered self-serve in Developer settings under a personal account or an organization you own; the client ID and secret are issued immediately.",
+      "sourceIds": [
+        "s3",
+        "s5",
+        "t1"
+      ]
+    },
+    "devModeLimits": {
+      "value": false,
+      "note": "There is no user cap, test-user list or 'unverified app' screen. A GitHub App set to private ('Only on this account') can only be installed on the owning account; switching it to public removes that restriction with no review. OAuth Apps can be authorized by any GitHub user from the start.",
+      "sourceIds": [
+        "s6",
+        "s8"
+      ]
+    },
+    "reviewRequired": {
+      "value": false,
+      "note": "GitHub does not review GitHub Apps or OAuth Apps before external users connect. A public GitHub App can be installed and authorized by any GitHub user. Review applies only to GitHub Marketplace listings, which are optional. Organization owners may still need to install or approve your app for their org's resources, but that is a per-customer decision, not a GitHub review.",
+      "sourceIds": [
+        "s6",
+        "s7",
+        "s28",
+        "t1"
+      ]
+    },
+    "securityAssessment": {
+      "value": false,
+      "note": "No third-party security assessment is required for GitHub Apps or OAuth Apps. Marketplace links to security best practices as a recommendation only.",
+      "sourceIds": []
+    },
+    "businessVerification": {
+      "value": false,
+      "note": "Not required to register or share an app. Publisher verification (organization-owned app) is required only to sell paid plans or display a badge on GitHub Marketplace, which is optional.",
+      "sourceIds": [
+        "s9",
+        "s10",
+        "t1"
+      ]
+    },
+    "fees": {
+      "value": false,
+      "note": "No fees to register or publish an app; free Marketplace listings are allowed.",
+      "sourceIds": [
+        "s9",
+        "t1"
+      ]
+    },
+    "gated": {
+      "value": false,
+      "note": "The REST and GraphQL APIs are available to any registered app with no partner program. Enterprise-level resources (the enterprise object itself) are not available to GitHub Apps; use an OAuth App for those.",
+      "sourceIds": [
+        "s29",
+        "t1"
+      ]
+    }
+  },
+  "effort": {
+    "handsOnHours": {
+      "min": 0.25,
+      "max": 2
+    },
+    "waitDays": {
+      "min": 0,
+      "max": 0
+    },
+    "recurring": [],
+    "sourceIds": [
+      "s5",
+      "s6"
+    ]
+  },
+  "biggestBlocker": {
+    "text": "There is no GitHub-side blocker; the practical blocker is per-customer: your app cannot reach an organization's repositories until an org owner installs the GitHub App (or approves the OAuth App under OAuth app access restrictions, on by default for new orgs).",
+    "sourceIds": [
+      "s14",
+      "s16",
+      "s17",
+      "s18"
+    ]
+  },
+  "variants": [
+    {
+      "label": "OAuth App instead of GitHub App",
+      "text": "Also self-serve with no review, and simpler (no installation step), but it uses broad scopes (repo grants full read/write to every private repo the user can reach), tokens act as the user with no app attribution, and orgs with OAuth app access restrictions (default for new orgs) block it from org resources until an owner approves. GitHub recommends GitHub Apps; pick an OAuth App only if you need enterprise-level resources."
+    },
+    {
+      "label": "Sign-in only",
+      "text": "A GitHub App with no repository permissions (or an OAuth App with no scopes / read:user) needs no installation and no org approval; users just authorize. Still no review."
+    },
+    {
+      "label": "Private / own org only",
+      "text": "A GitHub App set to 'Only on this account' can only be installed on the owning account and only its org members can authorize it. Fine for internal agents; switch to public when you open it up."
+    },
+    {
+      "label": "GitHub Marketplace listing",
+      "text": "Optional discovery channel, not required to let users connect. Free listings need a privacy policy, support contact, logo/screenshots, pricing plan and Marketplace webhook handling; paid plans additionally need publisher verification and 100 installations (GitHub App) or 200 users (OAuth App)."
+    }
+  ],
+  "steps": [
+    {
+      "title": "Sign in to GitHub with the owning account",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Use a personal account or, better, an organization you own (an org owner can later grant GitHub App manager to teammates). Account creation and 2FA need a human.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "title": "Decide GitHub App vs OAuth App",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "For an AI agent, register a GitHub App: fine-grained permissions, users choose which repos it can see, short-lived user tokens, scalable rate limits, and actions shown as the app on behalf of the user. Choose an OAuth App only for enterprise-level resources or if you want no installation step and accept broad scopes.",
+      "sourceIds": [
+        "s1",
+        "s2",
+        "s29"
+      ]
+    },
+    {
+      "title": "Register the GitHub App",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Developer settings > GitHub Apps > New GitHub App. Enter a unique name (max 34 characters), homepage URL, up to 10 callback URLs, keep 'Expire user authorization tokens' on, optionally 'Request user authorization (OAuth) during installation', and set or disable the webhook.",
+      "sourceIds": [
+        "s5",
+        "s26"
+      ]
+    },
+    {
+      "title": "Choose minimum permissions",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Pick repository permissions (e.g. Contents, Issues, Pull requests read/write) and account permissions (e.g. Email addresses read). GitHub Apps ignore the OAuth scope parameter, so permissions here are what users grant.",
+      "sourceIds": [
+        "s32"
+      ]
+    },
+    {
+      "title": "Set installation to 'Any account' and create the app",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Choose 'Any account' so it is public; then generate a client secret (and a private key if you will also use installation tokens) and store them in your agent backend.",
+      "sourceIds": [
+        "s6"
+      ]
+    },
+    {
+      "title": "Share the install link with users",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Send users to https://github.com/apps/APP-NAME/installations/new (optionally with a state parameter). They install on their account/org, pick repositories, then authorize so you get a user access token.",
+      "sourceIds": [
+        "s28"
+      ]
+    },
+    {
+      "title": "Org owners install or approve per customer",
+      "owner": "you",
+      "kind": "wait",
+      "detail": "For organization repositories, members who cannot install trigger a request to the org owner. Timing depends entirely on each customer's admin; nothing is waiting on GitHub.",
+      "sourceIds": [
+        "s16",
+        "s18"
+      ]
+    },
+    {
+      "title": "Optionally list on GitHub Marketplace",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Not required. Requires accepting the Marketplace Developer Agreement (org owner only for org apps), a privacy policy link, support contact, images and pricing plan.",
+      "sourceIds": [
+        "s7",
+        "s11",
+        "s9",
+        "s12"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "text": "A GitHub account or organization you own to register the app under.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "A unique app name (max 34 characters) and a homepage URL (a public repo URL is accepted).",
+      "sourceIds": [
+        "s26"
+      ]
+    },
+    {
+      "text": "Callback URL(s) for the user authorization flow (up to 10). Use HTTPS in production; http://localhost was accepted in our test.",
+      "sourceIds": [
+        "s5",
+        "t1"
+      ]
+    },
+    {
+      "text": "Only for an optional Marketplace listing: privacy policy URL, support link/email, logo, feature card, screenshots and a pricing plan.",
+      "sourceIds": [
+        "s11"
+      ]
+    }
+  ],
+  "gotchas": [
+    {
+      "text": "A GitHub App user token only reaches accounts where the app is installed. Authorizing alone is not enough: if the app is installed only on the user's personal account, it cannot see their organization's repos.",
+      "sourceIds": [
+        "s17"
+      ]
+    },
+    {
+      "text": "Installing on an organization (or requesting organization permissions) needs an org owner; members and repo admins can only send a request.",
+      "sourceIds": [
+        "s16",
+        "s18"
+      ]
+    },
+    {
+      "text": "OAuth Apps: new organizations have OAuth app access restrictions on by default, so an OAuth App cannot touch that org's private resources until an owner approves it. GitHub Apps go through installation instead: they only see the repositories an org owner (or repo admin) granted.",
+      "sourceIds": [
+        "s13",
+        "s14",
+        "s15",
+        "s27",
+        "s30",
+        "s31"
+      ]
+    },
+    {
+      "text": "Expiring user tokens (on by default for new GitHub Apps and OAuth Apps) last 8 hours and refresh tokens 6 months; refresh tokens rotate (the old one stops working when used), so concurrent agent workers must serialize refreshes.",
+      "sourceIds": [
+        "s19",
+        "s20",
+        "s4"
+      ]
+    },
+    {
+      "text": "Adding permissions later does not apply automatically: each installation owner must approve the new permissions, otherwise the installation keeps the old ones.",
+      "sourceIds": [
+        "s33"
+      ]
+    },
+    {
+      "text": "OAuth App scopes are coarse: repo grants full read/write to all public and private repos the user can access.",
+      "sourceIds": [
+        "s24"
+      ]
+    },
+    {
+      "text": "OAuth Apps: at most ten tokens per user/application/scope combination and ten new tokens per hour; older tokens get revoked beyond that.",
+      "sourceIds": [
+        "s21"
+      ]
+    },
+    {
+      "text": "User access tokens do not get the scaling rate limit of installation tokens; OAuth App limits are lower and do not scale (GitHub's docs cite the user's 5,000 requests/hour).",
+      "sourceIds": [
+        "s22"
+      ]
+    },
+    {
+      "text": "SAML SSO orgs: users must have an active SAML session for the org before authorizing, or org resources will be missing.",
+      "sourceIds": [
+        "s23"
+      ]
+    },
+    {
+      "text": "Each user or org can register at most 100 GitHub Apps.",
+      "sourceIds": [
+        "s25"
+      ]
+    }
+  ],
+  "stuck": [
+    {
+      "problem": "User authorized the app but the agent gets 404/empty results for their organization's repositories.",
+      "fix": "The app is not installed on that org (or not granted those repos). Have the user install it on the org or request installation from the org owner, then reselect repositories.",
+      "sourceIds": [
+        "s17",
+        "s18"
+      ]
+    },
+    {
+      "problem": "OAuth App works on personal repos but not on an organization's private repos.",
+      "fix": "The org has OAuth app access restrictions enabled. The user requests approval and an org owner grants access under OAuth app policy, or switch to a GitHub App.",
+      "sourceIds": [
+        "s13",
+        "s15"
+      ]
+    },
+    {
+      "problem": "Other users cannot find or install the app.",
+      "fix": "The GitHub App is private ('Only on this account'). Change it to public in the app settings.",
+      "sourceIds": [
+        "s8"
+      ]
+    },
+    {
+      "problem": "bad_refresh_token errors after a while.",
+      "fix": "The refresh token was already used (rotation) or is over six months old; store the newest pair atomically and re-run the authorization flow when it expires.",
+      "sourceIds": [
+        "s19",
+        "s20"
+      ]
+    }
+  ],
+  "tested": {
+    "date": "2026-10-19",
+    "summary": "We registered a public GitHub App (installable by any account) with Contents read and Issues read/write permissions, then generated a client secret. It took 9 minutes with no review, approval, verification form or payment.",
+    "minutes": 9,
+    "observations": [
+      {
+        "step": "Sign in to GitHub",
+        "docsSaid": "A human must handle sign-in and 2FA.",
+        "weSaw": "Signing in from a new device triggered device verification: a number match in the GitHub Mobile app, with an emailed code as the fallback.",
+        "matched": true
+      },
+      {
+        "step": "Callback URL",
+        "docsSaid": "Our guide listed HTTPS callback URLs as a requirement.",
+        "weSaw": "http://localhost:3100/callback was accepted. HTTPS is still what you want in production, but local development works without it.",
+        "matched": false
+      },
+      {
+        "step": "Make it public (\"Any account\")",
+        "docsSaid": "No review is needed for a public GitHub App.",
+        "weSaw": "No warning, review step or extra form when choosing Any account.",
+        "matched": true
+      },
+      {
+        "step": "Create the app",
+        "docsSaid": "Self-serve, no approval or fees.",
+        "weSaw": "Created instantly. No approval, verification or payment.",
+        "matched": true
+      },
+      {
+        "step": "Client secret",
+        "docsSaid": "Generated from the app settings page.",
+        "weSaw": "Generated instantly on the app page.",
+        "matched": true
+      }
+    ]
+  },
+  "unknowns": [
+    "GitHub's docs do not explicitly state 'no review' for public GitHub Apps or OAuth Apps; the no-review conclusion is from the docs describing public apps as installable by any user with no review step outside Marketplace.",
+    "Review time for an optional Marketplace listing is not documented."
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+      "title": "Differences between GitHub Apps and OAuth apps",
+      "level": "official",
+      "quote": "In general, GitHub Apps are preferred over OAuth apps. GitHub Apps use fine-grained permissions, give the user more control over which repositories the app can access, and use short-lived tokens.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s2",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/deciding-when-to-build-a-github-app",
+      "title": "Deciding when to build a GitHub App",
+      "level": "official",
+      "quote": "Conversely, an OAuth app can access every repository that the user who authorized the app can access.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s3",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app",
+      "title": "Creating an OAuth app",
+      "level": "official",
+      "quote": "You can create and register an OAuth app under your personal account or under any organization you have administrative access to.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s4",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app",
+      "title": "Creating an OAuth app",
+      "level": "official",
+      "quote": "Expire user access tokens is enabled by default.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s5",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app",
+      "title": "Registering a GitHub App",
+      "level": "official",
+      "quote": "You can register a GitHub App under your personal account or under any organization you own.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s6",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/making-a-github-app-public-or-private",
+      "title": "Making a GitHub App public or private",
+      "level": "official",
+      "quote": "If you set your GitHub App registration to public, any user on GitHub can install it and authorize it.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s7",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/making-a-github-app-public-or-private",
+      "title": "Making a GitHub App public or private",
+      "level": "official",
+      "quote": "If your GitHub App is public to all users on GitHub, you can also choose to publish it to GitHub Marketplace.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s8",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/making-a-github-app-public-or-private",
+      "title": "Making a GitHub App public or private",
+      "level": "official",
+      "quote": "If you set your GitHub App registration to private, it can only be installed on the account that owns the app.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s9",
+      "url": "https://docs.github.com/en/apps/github-marketplace/github-marketplace-overview/about-github-marketplace-for-apps",
+      "title": "About GitHub Marketplace for apps",
+      "level": "official",
+      "quote": "Anyone can share their apps with other users for free on GitHub Marketplace but only apps owned by organizations can sell their app.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s10",
+      "url": "https://docs.github.com/en/apps/github-marketplace/github-marketplace-overview/about-github-marketplace-for-apps",
+      "title": "About GitHub Marketplace for apps",
+      "level": "official",
+      "quote": "To publish paid plans for your app and display a marketplace badge, you must complete the publisher verification process.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s11",
+      "url": "https://docs.github.com/en/apps/github-marketplace/creating-apps-for-github-marketplace/requirements-for-listing-an-app",
+      "title": "Requirements for listing an app",
+      "level": "official",
+      "quote": "Listings must have a valid link to a privacy policy.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s12",
+      "url": "https://docs.github.com/en/apps/github-marketplace/creating-apps-for-github-marketplace/requirements-for-listing-an-app",
+      "title": "Requirements for listing an app",
+      "level": "official",
+      "quote": "GitHub Apps should have a minimum of 100 installations. OAuth apps should have a minimum of 200 users.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s13",
+      "url": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/about-oauth-app-access-restrictions",
+      "title": "About OAuth app access restrictions",
+      "level": "official",
+      "quote": "When OAuth app access restrictions are enabled, organization members and outside collaborators cannot authorize OAuth app access to organization resources.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s14",
+      "url": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/about-oauth-app-access-restrictions",
+      "title": "About OAuth app access restrictions",
+      "level": "official",
+      "quote": "When you create a new organization, OAuth app access restrictions are enabled by default.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s15",
+      "url": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization",
+      "title": "Approving OAuth apps for your organization",
+      "level": "official",
+      "quote": "When an organization member or outside collaborator requests OAuth app access to organization resources, organization owners can approve or deny the request.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s16",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+      "title": "Differences between GitHub Apps and OAuth apps",
+      "level": "official",
+      "quote": "If a GitHub App is installed in a repository and requires organization permissions, the organization owner must approve the application.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s17",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-with-a-github-app-on-behalf-of-a-user",
+      "title": "Authenticating with a GitHub App on behalf of a user",
+      "level": "official",
+      "quote": "The app can only access resources in an account where it is installed.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s18",
+      "url": "https://docs.github.com/en/apps/using-github-apps/installing-a-github-app-from-a-third-party",
+      "title": "Installing a GitHub App from a third party",
+      "level": "official",
+      "quote": "Instead of installing the app, GitHub will send a notification to the organization owner to request the organization owner to install the app.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s19",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/refreshing-user-access-tokens",
+      "title": "Refreshing user access tokens",
+      "level": "official",
+      "quote": "The user access token expires after eight hours, and the refresh token expires after six months.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s20",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/refreshing-user-access-tokens",
+      "title": "Refreshing user access tokens",
+      "level": "official",
+      "quote": "Once you use a refresh token, that refresh token and the old user access token will no longer work.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s21",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps",
+      "title": "Authorizing OAuth apps",
+      "level": "official",
+      "quote": "There is a limit of ten tokens that are issued per user/application/scope combination, and a rate limit of ten tokens created per hour.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s22",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+      "title": "Differences between GitHub Apps and OAuth apps",
+      "level": "official",
+      "quote": "Conversely, OAuth apps have lower rate limits and do not scale.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s23",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-with-a-github-app-on-behalf-of-a-user",
+      "title": "Authenticating with a GitHub App on behalf of a user",
+      "level": "official",
+      "quote": "If a user reports that they cannot see resources owned by their organization after authorizing your GitHub App and the organization uses SAML SSO, instruct the user to start an active SAML session for their organization before reauthorizing.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s24",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps",
+      "title": "Scopes for OAuth apps",
+      "level": "official",
+      "quote": "Grants full access to public and private repositories including read and write access to code, commit statuses, repository invitations, collaborators, deployment statuses, and repository webhooks.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s25",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app",
+      "title": "Registering a GitHub App",
+      "level": "official",
+      "quote": "A user or organization can register up to 100 GitHub Apps, but there is no limit to how many GitHub Apps can be installed on an account.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s26",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app",
+      "title": "Registering a GitHub App",
+      "level": "official",
+      "quote": "The name must be unique across GitHub.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s27",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+      "title": "Differences between GitHub Apps and OAuth apps",
+      "level": "official",
+      "quote": "A GitHub App only has access to the repositories an organization owner has granted.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s28",
+      "url": "https://docs.github.com/en/apps/sharing-github-apps/sharing-your-github-app",
+      "title": "Sharing your GitHub App",
+      "level": "official",
+      "quote": "If your GitHub App is public, other users and organizations can install your app.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s29",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/deciding-when-to-build-a-github-app",
+      "title": "Deciding when to build a GitHub App",
+      "level": "official",
+      "quote": "Enterprise-level resources such as the enterprise object itself are not available to GitHub Apps.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s30",
+      "url": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/about-oauth-app-access-restrictions",
+      "title": "About OAuth app access restrictions",
+      "level": "official",
+      "quote": "When an organization has not set up OAuth app access restrictions, any OAuth app authorized by an organization member can also access the organization",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s31",
+      "url": "https://docs.github.com/en/organizations/managing-organization-settings/limiting-oauth-app-and-github-app-access-requests",
+      "title": "Limiting OAuth app and GitHub App access requests and installations",
+      "level": "official",
+      "quote": "By default, app access requests are enabled.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s32",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/refreshing-user-access-tokens",
+      "title": "Refreshing user access tokens",
+      "level": "official",
+      "quote": "The scope parameter does not grant permissions to a GitHub App.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s33",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app",
+      "title": "Choosing permissions for a GitHub App",
+      "level": "official",
+      "quote": "If the account owner does not approve the new permissions, their installation will continue to use the old permissions.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "t1",
+      "url": "https://github.com/settings/apps/new",
+      "title": "Hands-on test: registering a GitHub App (2026-10-19)",
+      "level": "tested",
+      "quoteVerified": null,
+      "checkedAt": "2026-10-19"
+    }
+  ]
+}

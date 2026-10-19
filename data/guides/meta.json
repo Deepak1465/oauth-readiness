@@ -1,0 +1,584 @@
+{
+  "slug": "meta",
+  "name": "Meta (Facebook & Instagram)",
+  "website": "https://developers.facebook.com",
+  "devPortalUrl": "https://developers.facebook.com/apps",
+  "generatedAt": "2026-10-19T00:00:00Z",
+  "method": "library",
+  "composio": {
+    "managed": true,
+    "toolkits": [
+      "facebook",
+      "instagram",
+      "metaads"
+    ]
+  },
+  "summary": "Anyone can create a Meta app and test it right away with people who have a role on it, but letting outside users connect their Pages or Instagram professional accounts needs Advanced Access, which means App Review, Business Verification and, for Page and Instagram permissions, Tech Provider access verification. Expect one to three working days of preparation (screencasts per permission, test instructions, privacy policy, business documents) and roughly one to six weeks of waiting, plus an annual Data Use Checkup.",
+  "scenario": "Public multi-tenant app (Meta calls this a Tech Provider) using Facebook Login for Business so that any external user can connect the Facebook Pages they manage and the Instagram professional accounts linked to those Pages, and let an agent read and act on them. Typical scopes: pages_show_list, pages_read_engagement, pages_read_user_content, pages_manage_posts, pages_manage_engagement, instagram_basic, instagram_content_publish, instagram_manage_comments, instagram_manage_insights (plus instagram_manage_messages / pages_messaging if the agent handles DMs). Every one of these needs Advanced Access.",
+  "facts": {
+    "selfServeCredentials": {
+      "value": true,
+      "note": "Any registered Meta developer can create an app in the App Dashboard and get an App ID and secret. New apps are automatically approved for Standard Access to all permissions, which works for people with a role on the app.",
+      "sourceIds": [
+        "s1",
+        "s2"
+      ]
+    },
+    "devModeLimits": {
+      "value": true,
+      "note": "Until Advanced Access is approved, permissions can only be requested from people who have a role on the app (admins, developers, testers) or on the business that claimed it. There is no numeric cap: non-role users simply cannot grant the permissions.",
+      "sourceIds": [
+        "s1",
+        "s3"
+      ]
+    },
+    "reviewRequired": {
+      "value": true,
+      "note": "App Review is required before anyone without a role on the app (or on the claiming business) can grant the permissions. Each permission is reviewed separately and needs its own description and screencast.",
+      "sourceIds": [
+        "s4",
+        "s5",
+        "s12"
+      ]
+    },
+    "securityAssessment": {
+      "value": false,
+      "note": "There is no third-party audit like Google CASA. Meta does have its own self-attested questionnaires: data handling questions during review, an annual Data Use Checkup, and an annual Data Protection Assessment for some apps that is sent by invitation. Answers that are incomplete or vague can cost you platform access.",
+      "sourceIds": [
+        "s9",
+        "s10"
+      ]
+    },
+    "businessVerification": {
+      "value": true,
+      "note": "Advanced Access requires the app to be connected to a verified Business (legal entity documents in Meta Business Manager). Page and Instagram permissions also trigger a separate Tech Provider 'access verification', which requires Business Verification first.",
+      "sourceIds": [
+        "s2",
+        "s6",
+        "s7",
+        "s15"
+      ]
+    },
+    "fees": {
+      "value": false,
+      "note": "None of the App Review, Business Verification or access verification docs mention a fee. Graph API calls are not billed; they are rate-limited.",
+      "sourceIds": []
+    },
+    "gated": {
+      "value": false,
+      "note": "There is no partner program or paid tier. Tech Provider access verification is a self-serve form that a business admin fills in after Business Verification, with a decision in about 5 days. It is an extra verification, not a sales gate.",
+      "sourceIds": [
+        "s7"
+      ]
+    }
+  },
+  "effort": {
+    "handsOnHours": {
+      "min": 8,
+      "max": 24
+    },
+    "waitDays": {
+      "min": 7,
+      "max": 45
+    },
+    "recurring": [
+      {
+        "text": "Annual Data Use Checkup for every app with Advanced Access: re-certify permissions, answer data handling questions and give testing instructions. Notices go out 60 days before the deadline.",
+        "sourceIds": [
+          "s2",
+          "s8",
+          "s11"
+        ]
+      },
+      {
+        "text": "Annual Data Protection Assessment for apps that Meta enrolls (sent by email or Alert Inbox), with 60 days to complete it or risk losing access.",
+        "sourceIds": [
+          "s10"
+        ]
+      },
+      {
+        "text": "User and Page tokens: long-lived user tokens last about 60 days, so users must re-authenticate or the app must refresh them.",
+        "sourceIds": [
+          "s13"
+        ]
+      }
+    ],
+    "sourceIds": [
+      "s5",
+      "s7",
+      "s15",
+      "s16"
+    ]
+  },
+  "biggestBlocker": {
+    "text": "Business Verification of a legal entity is required for Advanced Access (and is the prerequisite for Tech Provider access verification), so an individual developer without a registered business cannot let outside users connect their Pages or Instagram accounts.",
+    "sourceIds": [
+      "s2",
+      "s6",
+      "s7"
+    ]
+  },
+  "variants": [
+    {
+      "label": "Facebook Login only (public_profile, email)",
+      "text": "Meta's Facebook Login docs say apps can request public_profile and email from anyone without App Review. New Consumer apps are automatically approved for Advanced Access to both, but you have to switch them from Standard to Advanced by hand and the app must be in Live mode. You still need a privacy policy URL and a data deletion method, and to switch to Live you must complete the Data Use Checkup."
+    },
+    {
+      "label": "Own Pages / Instagram accounts only",
+      "text": "If the app only serves Pages or Instagram professional accounts that you or your business manage, Standard Access is enough. You need no App Review and no Business Verification: just give the people involved a role on the app or on the business that claims it."
+    },
+    {
+      "label": "Instagram API with Instagram Login",
+      "text": "This path works for Instagram professional accounts that have no linked Facebook Page. It uses its own scopes (instagram_business_basic, instagram_business_content_publish, instagram_business_manage_comments, instagram_business_manage_messages), but you still need App Review, Advanced Access and Business Verification for outside accounts. An app can use either Facebook Login or Instagram Login, not both, and only web supports this login."
+    },
+    {
+      "label": "Personal Instagram accounts",
+      "text": "Not supported. The Instagram Platform only serves professional (business or creator) accounts."
+    }
+  ],
+  "steps": [
+    {
+      "title": "Register as a Meta developer and create the app",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Sign in with a Facebook account, register as a developer and accept the terms, then create an app with the Pages / Instagram (Facebook Login for Business) use cases. You get the App ID and secret immediately.",
+      "sourceIds": [
+        "s1"
+      ]
+    },
+    {
+      "title": "Configure Basic settings",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Fill in the redirect URIs, 1024x1024 app icon (with no Meta trademarks), privacy policy URL, app category, data deletion callback or instructions URL, and the primary contact email.",
+      "sourceIds": [
+        "s5",
+        "s14"
+      ]
+    },
+    {
+      "title": "Build and test with role users (Standard Access)",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Add teammates as Testers or Developers, connect a test Page and a linked Instagram professional account, and build the flows. Make at least one successful API call with each permission you will request; the Request advanced access button stays grey until the call has been logged (which can take up to 2 days), and the call must be within 30 days of submitting.",
+      "sourceIds": [
+        "s3",
+        "s5"
+      ]
+    },
+    {
+      "title": "Complete Business Verification",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Connect the app to a business portfolio and have a business admin submit legal entity details and documents in Business Manager / Security Center. Start this early, because App Review prompts for it after you select permissions.",
+      "sourceIds": [
+        "s6",
+        "s5"
+      ]
+    },
+    {
+      "title": "Wait for Business Verification",
+      "owner": "you",
+      "kind": "wait",
+      "detail": "Meta's help center says a decision can take up to 14 business days. Clean cases are often faster.",
+      "sourceIds": [
+        "s15"
+      ]
+    },
+    {
+      "title": "Complete Tech Provider access verification",
+      "owner": "you",
+      "kind": "work",
+      "detail": "A business admin categorizes and describes how the business uses other businesses' data, under App Dashboard > Basic > Verifications > Access verification. This is required for pages_* and instagram_* permissions used by other businesses.",
+      "sourceIds": [
+        "s7"
+      ]
+    },
+    {
+      "title": "Draft per-permission usage descriptions and reviewer test instructions",
+      "owner": "agent",
+      "kind": "work",
+      "detail": "Write one specific description for each permission (no copy-paste), plus step-by-step instructions for reviewers to reach and test the app. Reviewers use their own test accounts, so if your login is not Meta-based, give them test credentials for your app.",
+      "sourceIds": [
+        "s5",
+        "s12"
+      ]
+    },
+    {
+      "title": "Record a screencast for each permission",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Record at 1080p or better with the UI in English and no audio needed. Show the user granting the permission in the Meta dialog, then the feature that uses it end to end. Any permission without a recording is not approved.",
+      "sourceIds": [
+        "s5",
+        "s12"
+      ]
+    },
+    {
+      "title": "Answer data handling questions and submit for App Review",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Answer the data handling questions, confirm the app settings, then submit and accept the Platform Onboarding Terms.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "title": "Wait for App Review (and access verification)",
+      "owner": "you",
+      "kind": "wait",
+      "detail": "Meta's submission guide says to expect a decision within a week. A 2026 vendor report says the dashboard now warns of up to 20 days. Access verification decisions take about 5 days, and each rejection starts the wait again.",
+      "sourceIds": [
+        "s5",
+        "s7",
+        "s16"
+      ]
+    },
+    {
+      "title": "Go live",
+      "owner": "you",
+      "kind": "work",
+      "detail": "Switch the app to Live mode only after approval, if your app type has modes. Business-type apps have no modes and rely on Advanced Access.",
+      "sourceIds": [
+        "s3",
+        "s17"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "text": "A verified Business (legal entity) in Meta Business Manager, connected to the app",
+      "sourceIds": [
+        "s6"
+      ]
+    },
+    {
+      "text": "Tech Provider access verification for the business (needed for pages_* and instagram_* permissions used by other businesses)",
+      "sourceIds": [
+        "s7"
+      ]
+    },
+    {
+      "text": "Publicly reachable privacy policy URL",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "Data deletion: instructions in the privacy policy, or a data deletion request callback over HTTPS",
+      "sourceIds": [
+        "s14"
+      ]
+    },
+    {
+      "text": "1024x1024 app icon with no Meta trademarks or logos",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "One screencast and one written description per requested permission",
+      "sourceIds": [
+        "s5",
+        "s12"
+      ]
+    },
+    {
+      "text": "A testable app (public, or with access instructions and test credentials for reviewers)",
+      "sourceIds": [
+        "s4",
+        "s12"
+      ]
+    },
+    {
+      "text": "At least one successful API call per permission within 30 days before submitting",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "End users must have an Instagram professional account, linked to a Page they can administer if you use Facebook Login",
+      "sourceIds": [
+        "s18"
+      ]
+    }
+  ],
+  "gotchas": [
+    {
+      "text": "Switching to Live mode before approval breaks the app even for role users, because Live apps can only use approved permissions. Test data created in development mode also becomes visible to everyone once you switch.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "Without access verification, Page and Instagram endpoints called for non-role users fail with a misleading error code 100 ('Unsupported get request ... does not exist') rather than a permission error.",
+      "sourceIds": [
+        "s7"
+      ]
+    },
+    {
+      "text": "Changing a permission from Advanced back to Standard immediately cuts off every user without a role. Restoring Advanced Access to a previously approved permission does not need re-review.",
+      "sourceIds": [
+        "s2"
+      ]
+    },
+    {
+      "text": "Changing the app's basic or advanced settings after submitting may trigger re-review.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "text": "Long-lived user tokens last about 60 days. Page tokens derived from them must be handled carefully or users must reconnect.",
+      "sourceIds": [
+        "s13"
+      ]
+    },
+    {
+      "text": "Graph API rate limits scale with daily active users (200 calls per hour times the number of users, for app tokens). Page tokens and the Instagram Platform use Business Use Case limits instead.",
+      "sourceIds": [
+        "s19"
+      ]
+    },
+    {
+      "text": "An app can use Facebook Login or Instagram Login for Instagram, not both. Choose before you submit.",
+      "sourceIds": [
+        "s12"
+      ]
+    },
+    {
+      "text": "Verified status is lost if the app is disconnected from its business or the business account becomes restricted.",
+      "sourceIds": [
+        "s7"
+      ]
+    }
+  ],
+  "stuck": [
+    {
+      "problem": "Whole submission rejected because reviewers could not access or log into the app",
+      "fix": "Give public access or clear step-by-step login instructions, plus working test credentials that do not need 2FA, email verification or an IP allowlist. Do not provide your personal Meta account.",
+      "sourceIds": [
+        "s4",
+        "s5",
+        "s16"
+      ]
+    },
+    {
+      "problem": "Individual permission rejected because the screencast did not show it being used",
+      "fix": "Record each permission separately: show the Meta consent dialog granting it, then the in-app action that uses it, with captions.",
+      "sourceIds": [
+        "s5",
+        "s12"
+      ]
+    },
+    {
+      "problem": "Permission rejected as not needed or outside its allowed usage",
+      "fix": "Request only the permissions the current build actually uses, and check each one's Allowed Usage section before you submit.",
+      "sourceIds": [
+        "s5",
+        "s12"
+      ]
+    },
+    {
+      "problem": "'Request advanced access' button is greyed out",
+      "fix": "Make a successful call with that permission (in your app or Graph API Explorer) and wait up to 2 days for it to be logged.",
+      "sourceIds": [
+        "s5"
+      ]
+    },
+    {
+      "problem": "Business Verification rejected",
+      "fix": "Make the legal name and address in Business Manager match the registration documents exactly, then resubmit.",
+      "sourceIds": [
+        "s16"
+      ]
+    },
+    {
+      "problem": "Data Use Checkup answers need changes",
+      "fix": "You have 20 calendar days to resubmit, and the app stays active meanwhile. After every third attempt there is a 3-day cooldown.",
+      "sourceIds": [
+        "s11"
+      ]
+    }
+  ],
+  "tested": null,
+  "unknowns": [
+    "The current official App Review turnaround is unclear. The submission guide says 'within a week', but a 2026 vendor blog reports the dashboard now warns of up to 20 days. I could not see the dashboard to confirm this.",
+    "The Meta Business Help Center page on Business Verification is rendered by JavaScript, so its '14 business days' figure is cited through a secondary guide that quotes it.",
+    "Whether a sole proprietor or individual can pass Business Verification in every country was not established.",
+    "The App Review FAQ page did not render to a plain fetch, so I could not check its content."
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "url": "https://developers.facebook.com/docs/graph-api/overview/access-levels/",
+      "title": "Access Levels - Meta for Developers",
+      "level": "official",
+      "quote": "All Business, Consumer, and Gaming apps are automatically approved for Standard Access for all permissions and features. Advanced Access, however, must be approved on an individual permission and feature basis through the App Review process.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s2",
+      "url": "https://developers.facebook.com/docs/graph-api/overview/access-levels/",
+      "title": "Access Levels - Meta for Developers",
+      "level": "official",
+      "quote": "Permissions with Advanced Access can be requested from any app user, and features with Advanced Access are active for all app users. However, Business Verification is required to get Advanced Access.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s3",
+      "url": "https://developers.facebook.com/documentation/development/build-and-test/app-modes",
+      "title": "App Modes - Meta for Developers",
+      "level": "official",
+      "quote": "Apps in Development mode can only request permissions from role users, and only permissions with standard or advanced access levels",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s4",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review",
+      "title": "App Review process - Meta for Developers",
+      "level": "official",
+      "quote": "If your app will be used by anyone without a Role on the app or a role in a Business ... that has claimed the app, it must first undergo App Review.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s5",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review/submission-guide",
+      "title": "App Review Submission Guide - Meta for Developers",
+      "level": "official",
+      "quote": "Once you accept the terms and submit, your submission will be queued and you should receive a decision within a week.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s6",
+      "url": "https://developers.facebook.com/documentation/development/release/business-verification",
+      "title": "Business Verification - Meta for Developers",
+      "level": "official",
+      "quote": "Apps that request advanced access for permissions and apps that allow other Businesses ... to access their own data must be connected to a Business that has completed Business Verification.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s7",
+      "url": "https://developers.facebook.com/documentation/development/release/access-verification",
+      "title": "Access Verification - Meta for Developers",
+      "level": "official",
+      "quote": "To complete verification, any person with Admin access on the business must categorize and describe how the business uses other businesses' data to provide a service for those businesses. Once a business admin has completed the process a decision will be made within approximately 5 days.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s8",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/data-use-checkup",
+      "title": "Data Use Checkup - Meta for Developers",
+      "level": "official",
+      "quote": "The Data Use Checkup is an annual assessment that evaluates whether a developer's continued use of and access to specific data via Meta APIs is in compliance with our Meta Platform Terms and Developer Policies.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s9",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/app-review/content",
+      "title": "App Review content - Meta for Developers",
+      "level": "official",
+      "quote": "Starting on or after June 12th, 2023, if your app requires advanced level access to permissions or features, you will need to complete business verification and data handling questions as part of the app review process.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s10",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/data-protection-assessment",
+      "title": "Data Protection Assessment - Meta for Developers",
+      "level": "official",
+      "quote": "The Data Protection Assessment is a questionnaire that is an annual requirement for apps accessing certain types of data.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s11",
+      "url": "https://developers.facebook.com/documentation/resp-plat-initiatives/individual-processes/data-use-checkup/faq",
+      "title": "Data Use Checkup FAQ - Meta for Developers",
+      "level": "official",
+      "quote": "If changes to your data handling practices are required, you will have 20 calendar days to resubmit acceptable responses.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s12",
+      "url": "https://developers.facebook.com/documentation/instagram-platform/app-review",
+      "title": "Instagram Platform App Review - Meta for Developers",
+      "level": "official",
+      "quote": "Upload a screencast showing the end-to-end user experience for that specific permission or feature.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s13",
+      "url": "https://developers.facebook.com/documentation/facebook-login/guides/access-tokens/get-long-lived",
+      "title": "Long-lived access tokens - Meta for Developers",
+      "level": "official",
+      "quote": "If you need a long-lived User access token you can generate one from a short-lived User access token. A long-lived token generally lasts about 60 days.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s14",
+      "url": "https://developers.facebook.com/documentation/development/create-an-app/app-dashboard/data-deletion-callback",
+      "title": "Data Deletion Callback - Meta for Developers",
+      "level": "official",
+      "quote": "Apps that access user data must provide a way for users to request that their data be deleted.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s15",
+      "url": "https://www.saurabhdhar.com/blog/meta-business-verification-guide-2026",
+      "title": "Meta Business Verification 2026: Documents & Approval",
+      "level": "secondary",
+      "quote": "Meta's official documentation currently says that a business verification decision may take up to 14 business days",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s16",
+      "url": "https://bundle.social/blog/meta-app-review-20-days",
+      "title": "Meta App Review Now Takes 20 Days (bundle.social)",
+      "level": "secondary",
+      "quote": "Meta is now explicitly telling developers to expect a 20-day wait for most submissions.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s17",
+      "url": "https://developers.facebook.com/documentation/pages-api/overview",
+      "title": "Pages API Overview - Meta for Developers",
+      "level": "official",
+      "quote": "For Business apps, which do not have app modes, permissions must be approved for Advanced access before they can be granted to your app by an app user without a role on the app itself or a role in a Business that has claimed it.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s18",
+      "url": "https://developers.facebook.com/documentation/instagram-platform/overview",
+      "title": "Instagram Platform Overview - Meta for Developers",
+      "level": "official",
+      "quote": "Advanced Access is the access level required if your app serves Instagram professional accounts that you don't own or manage and can be used by app users who do not have a role on your app or a role on a business portfolio that has claimed your app. This access level requires App Review and Business Verification.",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    },
+    {
+      "id": "s19",
+      "url": "https://developers.facebook.com/docs/graph-api/overview/rate-limiting/",
+      "title": "Rate Limits - Meta for Developers",
+      "level": "official",
+      "quote": "Graph API requests are subject to Platform Rate Limits , while Marketing API and Instagram Platform requests are subject to Business Use Case (BUC) Rate Limits .",
+      "quoteVerified": true,
+      "checkedAt": "2026-10-19"
+    }
+  ]
+}
