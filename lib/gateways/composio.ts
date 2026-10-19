@@ -16,3 +16,13 @@ export function composioLookup(appName: string): { managed: boolean | null; tool
   if (byo.length) return { managed: false, toolkits: byo };
   return { managed: null, toolkits: [] };
 }
+
+// "Meta (Facebook & Instagram)" should match Composio's facebook and instagram toolkits, not just "meta".
+export function composioStatus(name: string, query: string): { managed: boolean | null; toolkits: string[] } {
+  const inner = name.match(/\(([^)]*)\)/)?.[1] ?? "";
+  const candidates = [name, query, ...inner.split(/&|,|\band\b/)].map((s) => s.trim()).filter(Boolean);
+  const results = candidates.map(composioLookup);
+  const toolkits = [...new Set(results.flatMap((r) => r.toolkits))];
+  const managed = results.some((r) => r.managed === true) ? true : results.some((r) => r.managed === false) ? false : null;
+  return { managed, toolkits };
+}

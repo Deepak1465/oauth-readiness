@@ -1,4 +1,4 @@
-import type { Guide } from "@/lib/guide";
+import type { Guide } from "@/lib/entities/guide";
 
 // Inline citation markers. Each links to the source entry at the bottom of the guide.
 export function Cite({ ids, guide }: { ids: string[]; guide: Guide }) {

@@ -1,8 +1,8 @@
 import { appendFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { EXPECTED, type Expected } from "../testbed/expected";
-import type { Guide } from "../lib/guide";
-import { verdictFor } from "../lib/verdict";
+import type { Guide } from "../lib/entities/guide";
+import { verdictFor } from "../lib/entities/verdict";
 
 // The guide agent researching fake providers whose correct answers we wrote ourselves (testbed/expected.ts).
 // Uses real Gemini calls, so results vary run to run; each fact is scored and logged to test-results/agent-scores.log.

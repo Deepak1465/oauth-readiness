@@ -56,15 +56,15 @@ Live-generated examples from testing: Spotify (tier 5, gated: extended access is
 
 **2. Work and waiting are different costs.** Two hours of forms plus three weeks of review is not "three weeks of work", and you can build while you wait. Guides split hands-on hours from calendar wait, and show both on a log-scale time ruler. The home page puts every app on one ruler, from minutes to months.
 
-**3. The AI gathers facts; code decides the tier.** Each guide records seven gate facts (yes/no/unknown): self-serve credentials, limits until reviewed, provider review, security assessment, business verification, mandatory fees, partner or paid access. A fixed rule (`lib/rubric.ts`) turns them into tier 1–5, so a tier means the same thing for every app and the reason is visible ("Tier 4 because of security assessment"). Unknown facts never lower the bar silently: with 3 or more unknowns the guide says **"Not enough evidence to rate"** instead of guessing.
+**3. The AI gathers facts; code decides the tier.** Each guide records seven gate facts (yes/no/unknown): self-serve credentials, limits until reviewed, provider review, security assessment, business verification, mandatory fees, partner or paid access. A fixed rule (`lib/entities/rubric.ts`) turns them into tier 1–5, so a tier means the same thing for every app and the reason is visible ("Tier 4 because of security assessment"). Unknown facts never lower the bar silently: with 3 or more unknowns the guide says **"Not enough evidence to rate"** instead of guessing.
 
 **4. Evidence is the product.** Sources disagree and rules change, so:
 - Every source gets an evidence level (tested, provider docs, secondary, community), **set by code from the domain**, not by the model.
-- Every quote is fetched and checked against the live page (`lib/quotecheck.ts`). An official source whose quote can't be found counts as secondary when computing confidence.
+- Every quote is fetched and checked against the live page (`lib/shared/quote.ts`, run by `lib/usecases/validate-guide.ts` for library guides and `lib/mappers/llm-to-guide.ts` for live ones). An official source whose quote can't be found counts as secondary when computing confidence.
 - Conflicting timelines become ranges, with each source cited.
 
 **5. Agents where they add value, humans where they must.**
-- *Library research:* one Claude Code research agent per app, run in parallel. Each had one app, one output file, and a strict brief (`agents/RESEARCH_BRIEF.md`, `.claude/agents/oauth-researcher.md`). Agents had to pass the same validator, including the live quote check, before reporting back. They also found and reported bugs in the validator itself, which were fixed.
+- *Library research:* one Claude Code research agent per app, run in parallel. Each had one app, one output file, and a strict brief (`docs/research-brief.md`, `.claude/agents/oauth-researcher.md`). Agents had to pass the same validator, including the live quote check, before reporting back. They also found and reported bugs in the validator itself, which were fixed.
 - *Live generation:* a pipeline on Gemini's free tier (below).
 - *Hands-on attempts:* a human created real OAuth apps on GitHub, Notion and Google. Account sign-in, 2-step verification and accepting terms are exactly the steps an agent can't do, and the guides mark them **You**.
 
@@ -167,22 +167,43 @@ We stopped before submitting anything for review. We didn't create fake apps for
 
 ## Project layout
 
+`lib/` is layered so each part can be read, tested or swapped on its own. Dependencies point inward: use cases call gateways, mappers and plugins; entities depend on nothing.
+
 ```
-app/                      pages: home, guide/[slug], method; api/generate (streams agent progress)
-components/               verdict panel, time ruler, generate box, citations
-lib/rubric.ts             the tier rule (tested)
-lib/verdict.ts            tier, confidence and "not enough evidence" from a guide's facts
-lib/guide.ts              the guide schema (zod), shared by research agents, live agent and UI
-lib/agent.ts              live agent pipeline
-lib/quotecheck.ts         fetch + quote verification, JS-page fallback (tested)
-lib/search.ts, sources.ts search backends, evidence levels by domain, excerpting, link following
-data/guides/              library guides (researched + hand-tested)
-data/composio.json        Composio managed vs. bring-your-own toolkit list
-agents/RESEARCH_BRIEF.md  brief given to each research agent
-.claude/agents/           the research agent definition
-scripts/                  validate-guides.ts, generate.ts
-testbed/                  fake providers + OAuth server + client app, and their expected answers
-tests/                    Playwright suites: oauth.spec.ts, agent.spec.ts
+app/                         pages: home, guide/[slug], method; api/generate (streams agent progress)
+components/                  verdict panel, time ruler, generate box, citations
+
+lib/entities/                the domain, pure and dependency-free
+  guide.ts                   the guide schema (zod), shared by research agents, live agent and UI
+  rubric.ts                  the tier rule: 7 gate facts -> tier 1-5 (tested)
+  verdict.ts                 tier, confidence and "not enough evidence" from a guide's facts
+  evidence.ts                evidence levels and confidence
+lib/usecases/                what the app does
+  generate-guide.ts          the live agent pipeline: discover, search, crawl, write, verify
+  prompts.ts                 the two prompts the agent sends
+  guides.ts                  find and save guides (library first, then live storage)
+  validate-guide.ts          quote check and cited-source check, used by scripts/validate-guides.ts
+lib/gateways/                talking to the outside world
+  llm.ts                     Gemini structured output with free-model fallback (swap this to change provider)
+  web.ts                     page fetching, with the r.jina.ai fallback for JavaScript-rendered docs
+  composio.ts                Composio managed vs. bring-your-own lookup (data/composio.json)
+  library.ts                 reads the library guides in data/guides
+lib/mappers/                 turning one shape into another
+  llm-to-guide.ts            model output -> Guide (source ids, quote verification, evidence levels)
+  page-to-evidence.ts        HTML -> relevant excerpts, relevance score, links worth following, evidence level
+  markdown-to-html.ts        reader-service Markdown -> minimal HTML
+lib/plugins/                 interchangeable backends chosen by env vars
+  search/                    Tavily (with TAVILY_API_KEY) or DuckDuckGo HTML
+  storage/                   Upstash Redis (with UPSTASH_REDIS_REST_* or KV_REST_API_*) or local files
+lib/shared/                  small helpers: url, quote matching (tested), concurrency pool, rate limiter (tested)
+
+data/guides/                 library guides (researched + hand-tested)
+data/composio.json           Composio managed vs. bring-your-own toolkit list
+docs/research-brief.md       brief given to each research agent
+.claude/agents/              the research agent definition
+scripts/                     validate-guides.ts, generate.ts (CLI wrappers around the use cases)
+testbed/                     fake providers + OAuth server + client app, and their expected answers
+tests/                       Playwright suites: oauth.spec.ts, agent.spec.ts
 ```
 
 Built with Claude Code. The UI was designed with the `frontend-design` plugin and checked with headless-Chrome screenshots at desktop and phone widths. Vercel's [agent-skills](https://github.com/vercel-labs/agent-skills) were installed for the session (not committed).

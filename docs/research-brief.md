@@ -9,14 +9,14 @@ Accuracy matters more than completeness. **Never guess.** If you can't establish
 
 ## Output
 
-Write `/Users/deepakyadav/oauth-readiness/data/guides/<slug>.json` matching `Guide` in `/Users/deepakyadav/oauth-readiness/lib/guide.ts` (read it first, plus `lib/rubric.ts` and `lib/evidence.ts`). Do not edit any other file.
+Write `data/guides/<slug>.json` matching `Guide` in `lib/entities/guide.ts` (read it first, plus `lib/entities/rubric.ts` and `lib/entities/evidence.ts`). Do not edit any other file.
 
 Field rules:
 
 - `method`: `"library"`. `generatedAt`: `"2026-10-19T00:00:00Z"`. `tested`: `null` (hands-on results are added later by a human).
-- `composio`: look the app up in `/Users/deepakyadav/oauth-readiness/data/composio.json`. `managed: true` if any of its toolkits is in `managed`, `false` if only in `bringYourOwn`, `null` if absent. List matching toolkit slugs in `toolkits`.
+- `composio`: look the app up in `data/composio.json`. `managed: true` if any of its toolkits is in `managed`, `false` if only in `bringYourOwn`, `null` if absent. List matching toolkit slugs in `toolkits`.
 - `scenario`: the case the verdict assumes. Default: **a public app any external user can connect, requesting the scopes an AI agent typically needs to read and act on the user's data** (name the scopes). Other meaningful cases (sign-in only, internal/workspace-only, a more restricted API) go in `variants` as short `{label, text}` entries, e.g. "Internal only: no verification needed because ...".
-- `facts` (the 7 gates in `lib/rubric.ts`): each `{ value: true|false|null, note, sourceIds }` for the scenario. `reviewRequired` = review before users outside your own team/org can connect. Every `true` gate and every `false` gate that a developer might assume is true must cite a source.
+- `facts` (the 7 gates in `lib/entities/rubric.ts`): each `{ value: true|false|null, note, sourceIds }` for the scenario. `reviewRequired` = review before users outside your own team/org can connect. Every `true` gate and every `false` gate that a developer might assume is true must cite a source.
 - `effort.handsOnHours` and `effort.waitDays`: ranges `{min, max}` (`max: null` = open-ended). Hands-on = active work (forms, privacy policy, demo video). Wait = calendar time for approval. When sources disagree, widen the range and cite all of them. `recurring`: anything annual or periodic (e.g. reassessment).
 - `biggestBlocker`: one sentence, or `null` if there isn't one.
 - `steps`: ordered. Each has `owner: "agent"` only if an AI agent with a browser or API could plausibly do it without the human's identity or legal authority (e.g. drafting a scope justification, filling a redirect URI, checking requirements). Account creation, accepting terms, identity/business verification, payment, recording a demo of the real app, and anything needing 2FA are `"you"`. `kind: "wait"` for review waits.
@@ -31,7 +31,7 @@ Field rules:
 - Fetch every page you cite. Prefer the provider's own docs and policies.
 - `level`: `official` = the provider's own domain (docs, help center, policy, developer blog). `secondary` = integration platforms or vendor guides about the provider (Nango, Pipedream, Nylas, etc.). `community` = forums, Reddit, Stack Overflow, HN, community.* sites. Never `tested`.
 - `quoteVerified`: `null`. `checkedAt`: `"2026-10-19"`.
-- Then run `cd /Users/deepakyadav/oauth-readiness && npx tsx scripts/validate-guides.ts <slug>`. It validates the schema, checks cited ids exist, and fetches each URL to confirm the quote is on the page. Fix every "not found" quote (re-copy it exactly or replace the source) until all quotes on reachable pages verify. Pages that are "unreachable" to a plain fetch (JS-rendered) are acceptable, but prefer a reachable page saying the same thing.
+- Then run `npx tsx scripts/validate-guides.ts <slug>`. It validates the schema, checks cited ids exist, and fetches each URL to confirm the quote is on the page. Fix every "not found" quote (re-copy it exactly or replace the source) until all quotes on reachable pages verify. Pages that are "unreachable" to a plain fetch (JS-rendered) are acceptable, but prefer a reachable page saying the same thing.
 
 ## Report back (short)
 

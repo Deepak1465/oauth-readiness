@@ -1,6 +1,7 @@
-import { generateGuide, slugFor, type AgentEvent } from "@/lib/agent";
-import { RateLimiter } from "@/lib/ratelimit";
-import { getGuide, saveGuide } from "@/lib/store";
+import { generateGuide, type AgentEvent } from "@/lib/usecases/generate-guide";
+import { slugFor } from "@/lib/shared/url";
+import { RateLimiter } from "@/lib/shared/ratelimit";
+import { getGuide, saveGuide } from "@/lib/usecases/guides";
 
 export const maxDuration = 120;
 

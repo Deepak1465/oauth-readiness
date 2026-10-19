@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { Cite } from "@/components/Cite";
 import { CopyLink } from "@/components/CopyLink";
 import { VerdictPanel } from "@/components/Verdict";
-import type { Guide } from "@/lib/guide";
-import { getGuide } from "@/lib/store";
-import { verdictFor } from "@/lib/verdict";
+import type { Guide } from "@/lib/entities/guide";
+import { getGuide } from "@/lib/usecases/guides";
+import { verdictFor } from "@/lib/entities/verdict";
 
 export const dynamic = "force-dynamic";
 

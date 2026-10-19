@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { GenerateBox } from "@/components/GenerateBox";
 import { LibraryRuler } from "@/components/TimeRuler";
-import type { Guide } from "@/lib/guide";
-import { TIER_NAMES, type Tier } from "@/lib/rubric";
-import { libraryGuides, recentLiveGuides } from "@/lib/store";
-import { formatRange, verdictFor } from "@/lib/verdict";
+import type { Guide } from "@/lib/entities/guide";
+import { TIER_NAMES, type Tier } from "@/lib/entities/rubric";
+import { libraryGuides, recentLiveGuides } from "@/lib/usecases/guides";
+import { formatRange, verdictFor } from "@/lib/entities/verdict";
 
 export const dynamic = "force-dynamic";
 

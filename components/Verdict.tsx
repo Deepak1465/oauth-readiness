@@ -1,6 +1,6 @@
-import type { Guide } from "@/lib/guide";
-import type { GateName } from "@/lib/rubric";
-import { formatRange, GATE_LABELS, verdictFor } from "@/lib/verdict";
+import type { Guide } from "@/lib/entities/guide";
+import type { GateName } from "@/lib/entities/rubric";
+import { formatRange, GATE_LABELS, verdictFor } from "@/lib/entities/verdict";
 import { Cite } from "./Cite";
 import { GuideRuler } from "./TimeRuler";
 

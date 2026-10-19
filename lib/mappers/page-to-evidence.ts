@@ -1,24 +1,11 @@
-import type { EvidenceLevel } from "./evidence";
-import { normalize } from "./quotecheck";
+import type { EvidenceLevel } from "../entities/evidence";
+import { hostOf, rootDomain } from "../shared/url";
 
-// Evidence level is decided by code from the URL, not by the model.
+// Turns fetched pages into evidence: readable passages, a relevance score, links worth following,
+// and an evidence level decided by code from the URL (never by the model).
+
 const SECONDARY = ["nango.dev", "pipedream.com", "paragon", "nylas.com", "unipile.com", "merge.dev", "composio.dev", "arcade.dev", "auth0.com", "okta.com", "zapier.com", "medium.com", "dev.to"];
 const COMMUNITY = ["reddit.com", "stackoverflow.com", "stackexchange.com", "news.ycombinator.com", "github.com/orgs/community", "discuss.", "community.", "forum", "groups.google.com", "quora.com"];
-
-export function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-}
-
-// Registrable-ish root: "developers.notion.com" -> "notion.com". Good enough for official-domain matching.
-export function rootDomain(host: string): string {
-  const parts = host.split(".");
-  const twoLevelTld = parts.length > 2 && ["co", "com", "org", "net"].includes(parts.at(-2)!) && parts.at(-1)!.length === 2;
-  return parts.slice(twoLevelTld ? -3 : -2).join(".");
-}
 
 export function classify(url: string, officialRoots: string[]): EvidenceLevel {
   const host = hostOf(url);
@@ -29,8 +16,8 @@ export function classify(url: string, officialRoots: string[]): EvidenceLevel {
   return "secondary";
 }
 
-// Strip a page to readable text, then keep sentences around OAuth-approval keywords (plus one sentence of
-// context either side) so the model sees what it needs to quote without blowing the free-tier token budget.
+// Sentences around OAuth-approval keywords (plus one sentence of context either side) are what the model
+// needs to quote, without blowing the free-tier token budget.
 export const KEYWORDS = /review|verif|approv|\bfees?\b|scope|oauth|client id|client secret|redirect uri|publish|production|partner|assessment|audit|business|privacy polic|quota|rate limit|test user|sandbox|development mode|live mode|marketplace|submit|extension|access level|permission/i;
 
 export function pageText(html: string): string {
@@ -98,5 +85,3 @@ export function relevantLinks(html: string, baseUrl: string, root: string, max =
   }
   return out;
 }
-
-export { normalize };

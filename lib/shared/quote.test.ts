@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { quoteAppears } from "./quotecheck";
+import { quoteAppears } from "./quote";
 
 const page = `<html><body><p>Apps that request&nbsp;<b>restricted scopes</b> must complete a
   security assessment.</p><p>Verification can take 4–6 weeks.</p><script>var x = "fake quote here";</script></body></html>`;

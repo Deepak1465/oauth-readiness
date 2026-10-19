@@ -1,5 +1,5 @@
-import type { Guide } from "@/lib/guide";
-import { verdictFor } from "@/lib/verdict";
+import type { Guide } from "@/lib/entities/guide";
+import { verdictFor } from "@/lib/entities/verdict";
 
 // Log-scale ruler from 10 minutes to 6 months. Hands-on work is a solid bar; the approval wait follows it,
 // solid up to the minimum and hatched across the uncertain part of the range.

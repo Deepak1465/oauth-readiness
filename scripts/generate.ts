@@ -1,8 +1,8 @@
 // Runs the live agent from the command line: npx tsx --env-file=.env.local scripts/generate.ts "Spotify"
 // Writes data/generated/<slug>.json and prints the events and verdict.
-import { generateGuide } from "../lib/agent";
-import { saveGuide } from "../lib/store";
-import { verdictFor } from "../lib/verdict";
+import { generateGuide } from "../lib/usecases/generate-guide";
+import { saveGuide } from "../lib/usecases/guides";
+import { verdictFor } from "../lib/entities/verdict";
 
 const query = process.argv.slice(2).join(" ");
 if (!query) {
