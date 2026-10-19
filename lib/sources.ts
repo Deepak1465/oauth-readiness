@@ -31,7 +31,7 @@ export function classify(url: string, officialRoots: string[]): EvidenceLevel {
 
 // Strip a page to readable text, then keep sentences around OAuth-approval keywords (plus one sentence of
 // context either side) so the model sees what it needs to quote without blowing the free-tier token budget.
-export const KEYWORDS = /review|verif|approv|scope|oauth|client id|client secret|redirect uri|publish|production|partner|assessment|audit|business|privacy polic|quota|rate limit|test user|sandbox|development mode|live mode|marketplace|submit|extension|access level|permission/i;
+export const KEYWORDS = /review|verif|approv|\bfees?\b|scope|oauth|client id|client secret|redirect uri|publish|production|partner|assessment|audit|business|privacy polic|quota|rate limit|test user|sandbox|development mode|live mode|marketplace|submit|extension|access level|permission/i;
 
 export function pageText(html: string): string {
   return html

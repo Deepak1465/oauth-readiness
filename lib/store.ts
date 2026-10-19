@@ -8,7 +8,7 @@ import { Guide } from "./guide";
 
 const LIBRARY_DIR = join(process.cwd(), "data", "guides");
 // Serverless filesystems are read-only except /tmp, which doesn't survive between instances: fine as a fallback only.
-const LOCAL_DIR = process.env.VERCEL ? join("/tmp", "generated") : join(process.cwd(), "data", "generated");
+const LOCAL_DIR = process.env.GENERATED_DIR || (process.env.VERCEL ? join("/tmp", "generated") : join(process.cwd(), "data", "generated"));
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 

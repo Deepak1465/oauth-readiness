@@ -49,3 +49,8 @@ data/generated/
 
 # third-party skills (vercel-labs/agent-skills), reinstall from source
 /.claude/skills/
+
+# Playwright
+/test-results/
+/playwright-report/
+/data/test-generated/

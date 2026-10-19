@@ -1,20 +1,13 @@
-import { generateGuide, slugify, type AgentEvent } from "@/lib/agent";
+import { generateGuide, slugFor, type AgentEvent } from "@/lib/agent";
+import { RateLimiter } from "@/lib/ratelimit";
 import { getGuide, saveGuide } from "@/lib/store";
 
 export const maxDuration = 120;
 
 // Free-tier protection: a few generations per visitor per hour, and one run per app at a time.
-const recent = new Map<string, number[]>();
+const PER_HOUR = Number(process.env.RATE_LIMIT_PER_HOUR || 6);
+const limiter = new RateLimiter(PER_HOUR, 3600_000);
 const inFlight = new Set<string>();
-const PER_HOUR = 6;
-
-function allow(ip: string): boolean {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((t) => now - t < 3600_000);
-  if (hits.length >= PER_HOUR) return false;
-  recent.set(ip, [...hits, now]);
-  return true;
-}
 
 // Streams newline-delimited JSON events so the page can show the agent's progress as it happens.
 export async function POST(req: Request) {
@@ -22,13 +15,13 @@ export async function POST(req: Request) {
   const q = (query ?? "").trim().slice(0, 100);
   if (q.length < 2) return Response.json({ error: "Enter an app name or website." }, { status: 400 });
 
-  const cached = await getGuide(slugify(q));
+  const key = slugFor(q);
+  const cached = await getGuide(key);
   if (cached) return stream(async (emit) => emit({ type: "done", slug: cached.slug }));
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!allow(ip)) return Response.json({ error: `You've generated ${PER_HOUR} guides this hour. Open an existing guide or try again later.` }, { status: 429 });
-  const key = slugify(q);
   if (inFlight.has(key)) return Response.json({ error: "A guide for this app is already being generated. Refresh in a minute." }, { status: 409 });
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (!limiter.allow(ip)) return Response.json({ error: `You've generated ${PER_HOUR} guides this hour. Open an existing guide or try again later.` }, { status: 429 });
 
   return stream(async (emit) => {
     inFlight.add(key);

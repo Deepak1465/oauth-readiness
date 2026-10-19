@@ -20,6 +20,11 @@ export type AgentEvent =
   | { type: "done"; slug: string }
   | { type: "error"; message: string };
 
+// The guide slug for a request: the same for "Spotify", "spotify.com" and "https://developer.spotify.com/...".
+export function slugFor(query: string): string {
+  return slugify(appTerm(query));
+}
+
 // Free-tier models available to new keys (checked 2026-10-19). If one is overloaded we try the next.
 const MODELS = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
 const MAX_SOURCES = 10;
@@ -40,8 +45,21 @@ export function slugify(s: string): string {
 }
 
 // "hubspot.com" -> "hubspot", "Google Drive" -> "google drive"
+// If the user entered a website, return it as a full URL so the agent can start crawling there.
+export function seedUrl(q: string): string | null {
+  const t = q.trim();
+  if (!/^(https?:\/\/)?[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(t)) return null;
+  return t.startsWith("http") ? t : `https://${t}`;
+}
+
+// "developer.spotify.com" -> "spotify", "acme.localtest.me:4010/docs" -> "acme", "Google Drive" -> "Google Drive"
+const GENERIC_LABELS = new Set(["www", "docs", "developer", "developers", "dev", "api", "app", "apps", "help", "support"]);
 function appTerm(q: string): string {
-  return /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/.*)?$/.test(q) ? hostOf(q.startsWith("http") ? q : `https://${q}`).split(".").slice(-2, -1)[0] ?? q : q;
+  const url = seedUrl(q);
+  if (!url) return q.trim();
+  const labels = hostOf(url).split(".");
+  const meaningful = labels.slice(0, -1).filter((l) => !GENERIC_LABELS.has(l));
+  return meaningful[0] ?? labels[0] ?? q;
 }
 
 // What the model returns. Kept flat and default-free: Gemini's JSON-schema subset is strict.
@@ -158,11 +176,14 @@ async function pool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>
   return out;
 }
 
-async function load(url: string, title: string, officialRoots: Set<string>): Promise<Page | null> {
+async function load(url: string, title: string, officialRoots: Set<string>, stats: { thin: number }): Promise<Page | null> {
   const page = await fetchReadable(url, 10000);
   if (!page) return null;
   const text = excerpts(page.text, 5500);
-  if (text.length < 200) return null; // JS-only shells and empty pages are useless as evidence
+  if (text.length < 200) {
+    stats.thin++; // loaded, but nothing about OAuth, scopes or review on it
+    return null;
+  }
   const official = officialRoots.has(rootDomain(hostOf(page.finalUrl)));
   const pageTitle = page.text.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim();
   return { title: pageTitle || title || hostOf(page.finalUrl), url: page.finalUrl, html: page.text, text, score: relevance(text) + (official ? 8 : 0), official };
@@ -180,7 +201,10 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
   const L1 = "Identifying the provider and its developer docs";
   emit({ type: "step", id: "discover", label: L1 });
   const d = await callModel(ai, DISCOVER_PROMPT(term), Discovery, busy("discover", L1));
-  const officialRoots = new Set([...d.officialDomains.map(cleanRoot), cleanRoot(hostOf(d.website.startsWith("http") ? d.website : `https://${d.website}`))].filter((r) => r.includes(".")));
+  const seed = seedUrl(query);
+  const officialRoots = new Set(
+    [...d.officialDomains.map(cleanRoot), cleanRoot(hostOf(d.website.startsWith("http") ? d.website : `https://${d.website}`)), ...(seed ? [rootDomain(hostOf(seed))] : [])].filter((r) => r.includes(".")),
+  );
   emit({ type: "step", id: "discover", label: L1, detail: `${d.name}, ${d.docUrls.length} candidate doc pages on ${[...officialRoots].join(", ")}` });
 
   // 2. Search (best effort).
@@ -192,8 +216,12 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
   // 3. Fetch candidates, then follow relevant links on the provider's site one hop.
   const L3 = "Reading the provider's docs and following relevant links";
   emit({ type: "step", id: "fetch", label: L3 });
-  const candidates = [...d.docUrls.slice(0, 10).map((url) => ({ url, title: "" })), ...found.hits.slice(0, 12)].filter((c) => /^https?:\/\//.test(c.url));
-  const first = (await pool(candidates, 6, (c) => load(c.url, c.title, officialRoots))).filter((p): p is Page => !!p);
+  // The URL the user typed comes first: it's the one source we know is right.
+  const candidates = [...(seed ? [{ url: seed, title: "" }] : []), ...d.docUrls.slice(0, 10).map((url) => ({ url, title: "" })), ...found.hits.slice(0, 12)]
+    .filter((c) => /^https?:\/\//.test(c.url))
+    .filter((c, i, all) => all.findIndex((x) => x.url === c.url) === i);
+  const stats = { thin: 0 };
+  const first = (await pool(candidates, 6, (c) => load(c.url, c.title, officialRoots, stats))).filter((p): p is Page => !!p);
   const seen = new Set([...candidates.map((c) => c.url), ...first.map((p) => p.url)]);
   const nextHops = first
     .filter((p) => p.official)
@@ -202,13 +230,18 @@ export async function generateGuide(query: string, emit: (e: AgentEvent) => void
     .flatMap((p) => relevantLinks(p.html, p.url, rootDomain(hostOf(p.url)), 6))
     .filter((u) => !seen.has(u) && (seen.add(u), true))
     .slice(0, 14);
-  const second = (await pool(nextHops, 6, (u) => load(u, "", officialRoots))).filter((p): p is Page => !!p);
+  const second = (await pool(nextHops, 6, (u) => load(u, "", officialRoots, stats))).filter((p): p is Page => !!p);
   const byUrl = new Map([...first, ...second].map((p) => [p.url, p]));
   const pages = [...byUrl.values()].sort((a, b) => b.score - a.score);
   // Keep the strongest pages, but always leave room for a couple of non-official reports (real wait times live there).
   const officialPages = pages.filter((p) => p.official).slice(0, MAX_SOURCES - 2);
   const fetched = [...officialPages, ...pages.filter((p) => !p.official).slice(0, MAX_SOURCES - officialPages.length)];
-  if (!fetched.length) throw new Error(`Couldn't read any documentation for "${term}". Check the spelling, or enter the app's website.`);
+  if (!fetched.length) {
+    const name = d.name || term;
+    if (stats.thin) throw new Error(`Found ${name}'s website, but no public developer docs about OAuth apps, scopes or app review. API access may be by request only, so check with ${name} directly.`);
+    if (seed) throw new Error(`Couldn't load ${seed}. Check that the address is right and publicly reachable.`);
+    throw new Error(`Couldn't find developer documentation for "${term}". Check the spelling, or enter the app's developer docs URL.`);
+  }
   const misses = candidates.length - first.length;
   emit({ type: "step", id: "fetch", label: L3, detail: `${fetched.length} relevant pages kept (${officialPages.length} official), ${second.length} found by following links, ${misses} suggested URLs didn't load` });
 

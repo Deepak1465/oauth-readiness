@@ -9,7 +9,11 @@
     "lint": "eslint",
     "test": "vitest run",
     "validate:guides": "tsx scripts/validate-guides.ts",
-    "generate": "tsx --env-file=.env.local scripts/generate.ts"
+    "generate": "tsx --env-file=.env.local scripts/generate.ts",
+    "test:e2e": "playwright test",
+    "test:oauth": "playwright test --project=oauth",
+    "test:agent": "playwright test --project=agent",
+    "testbed": "node testbed/server.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
@@ -19,6 +23,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
